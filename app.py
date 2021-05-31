@@ -13,10 +13,10 @@ from plotly.subplots import make_subplots
 
 server = Flask(__name__)
 app = dash.Dash(server=server, external_stylesheets=[dbc.themes.DARKLY])
-app.title = "Trivsel - sammenlign skoler"
+app.title = "Trivsel – sammenlign skoler"
+pio.templates.default = "plotly_dark"
 
 df = pd.read_csv("data.csv").set_index("Institution")
-pio.templates.default = "plotly_dark"
 
 
 def make_table(element_id):
@@ -60,8 +60,8 @@ app.layout = html.Div(
 )
 def update_figure(input_values):
     fig = make_subplots(
-        cols=1,
         rows=len(df.columns),
+        cols=1,
         subplot_titles=df.columns,
         shared_xaxes=True,
         vertical_spacing=0.05,
@@ -79,9 +79,10 @@ def update_figure(input_values):
         )
         for i, input_value in enumerate(input_values):
             x = df.loc[input_value, column_name]
-            # Note: We could use fig.add_vline here to add the vertical lines, but that leaves us
-            # with no easy way to add legends. Instead, we add them as simple scatter plots with
-            # a hardcoded height and make sure we only show the legend for one group of lines.
+            # We could use fig.add_vline here to add the vertical lines, but that
+            # leaves us with no easy way to add legends. Instead, we add them as
+            # simple scatter plots with a hardcoded height and make sure we only
+            # show the legend for one group of lines.
             fig.add_trace(
                 go.Scatter(
                     x=[x, x],
@@ -100,22 +101,24 @@ def update_figure(input_values):
 @app.callback(
     Output("value-table", "data"), Input("school-input", "value"),
 )
-def update_value_table(input_values):
-    return list(make_row(lambda x: df.loc[x].round(2), input_values))
+def update_value_table(institutions):
+    return make_rows(lambda x: df.loc[x].round(2), institutions)
 
 
 @app.callback(
     Output("percentile-table", "data"), Input("school-input", "value"),
 )
-def update_percentile_table(input_values):
-    return list(
-        make_row(lambda x: ((df < df.loc[x]).mean() * 100).astype(int), input_values)
+def update_percentile_table(institutions):
+    return make_rows(
+        lambda x: ((df < df.loc[x]).mean() * 100).astype(int), institutions
     )
 
 
-def make_row(transformation, input_values):
-    for input_value in input_values:
-        yield {"Institution": input_value} | dict(transformation(input_value))
+def make_rows(transformation, institutions):
+    return [
+        {"Institution": institution} | dict(transformation(institution))
+        for institution in institutions
+    ]
 
 
 if __name__ == "__main__":
