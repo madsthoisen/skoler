@@ -98,16 +98,14 @@ def update_figure(input_values):
 
 
 @app.callback(
-    Output("value-table", "data"),
-    Input("school-input", "value"),
+    Output("value-table", "data"), Input("school-input", "value"),
 )
 def update_value_table(input_values):
     return list(make_row(lambda x: df.loc[x].round(2), input_values))
 
 
 @app.callback(
-    Output("percentile-table", "data"),
-    Input("school-input", "value"),
+    Output("percentile-table", "data"), Input("school-input", "value"),
 )
 def update_percentile_table(input_values):
     return list(
