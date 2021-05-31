@@ -13,10 +13,29 @@ from plotly.subplots import make_subplots
 
 server = Flask(__name__)
 app = dash.Dash(server=server, external_stylesheets=[dbc.themes.DARKLY])
-app.title = 'Trivsel - sammenlign skoler'
+app.title = "Trivsel - sammenlign skoler"
 
 df = pd.read_csv("data.csv").set_index("Institution")
 pio.templates.default = "plotly_dark"
+
+
+def make_table(element_id):
+    return dash_table.DataTable(
+        id=element_id,
+        columns=[
+            {"name": name, "id": name} for name in ["Institution"] + list(df.columns)
+        ],
+        style_header={
+            "fontFamily": "Lato, sans-serif",
+            "backgroundColor": "rgb(30, 30, 30)",
+            "paddingRight": "10px",
+        },
+        style_cell={
+            "fontFamily": "Lato, sans-serif",
+            "backgroundColor": "rgb(50, 50, 50)",
+            "paddingRight": "10px",
+        },
+    )
 
 
 app.layout = html.Div(
@@ -31,45 +50,14 @@ app.layout = html.Div(
             )
         ),
         html.H4("Trivselsindikatorer"),
-        dash_table.DataTable(
-            id="value-table",
-            columns=[{"name": "Institution", "id": "Institution"}]
-            + [{"name": name, "id": name} for name in df.columns],
-            style_header={
-                "fontFamily": "Lato, sans-serif",
-                "backgroundColor": "rgb(30, 30, 30)",
-                "paddingRight": "10px",
-            },
-            style_cell={
-                "fontFamily": "Lato, sans-serif",
-                "backgroundColor": "rgb(50, 50, 50)",
-                "color": "white",
-                "paddingRight": "10px",
-            },
-        ),
+        make_table("value-table"),
         html.H4("Percentiler"),
-        dash_table.DataTable(
-            id="percentile-table",
-            columns=[{"name": "Institution", "id": "Institution"}]
-            + [{"name": name, "id": name} for name in df.columns],
-            style_header={
-                "fontFamily": "Lato, sans-serif",
-                "backgroundColor": "rgb(30, 30, 30)",
-                "paddingRight": "10px",
-            },
-            style_cell={
-                "fontFamily": "Lato, sans-serif",
-                "backgroundColor": "rgb(50, 50, 50)",
-                "color": "white",
-                "paddingRight": "10px",
-            },
-        ),
-        dcc.Graph(
-            id="general-graph",
-        ),
+        make_table("percentile-table"),
+        dcc.Graph(id="general-graph"),
         html.H4("Om"),
         dcc.Markdown(
-            'Kilde: [Uddannelsesstatistik](https://uddannelsesstatistik.dk/Pages/Reports/1599.aspx). Dato: 2021-05-30.'
+            "Kilde: [Uddannelsesstatistik](https://uddannelsesstatistik.dk/Pages/Reports/1599.aspx) (2021-05-30). "
+            + "Kildekode: [GitHub](https://github.com/fuglede/skoler)"
         ),
     ],
     className="container",
@@ -90,6 +78,7 @@ def update_figure(input_values):
     )
 
     fig.update_layout(height=1500, paper_bgcolor="#222", plot_bgcolor="#222")
+    # Use all but the first color for the vertical lines in the plots.
     base_color, *colors = px.colors.qualitative.Plotly
 
     for row, column_name in enumerate(df.columns, 1):
@@ -115,36 +104,30 @@ def update_figure(input_values):
                 row=row,
                 col=1,
             )
-            # fig.add_vline(x=x, line_color=colors[i % len(colors)], annotation_text=input_value, row=row)
     return fig
 
 
 @app.callback(
-    Output(component_id="value-table", component_property="data"),
-    Input(component_id="school-input", component_property="value"),
+    Output("value-table", "data"),
+    Input("school-input", "value"),
 )
 def update_value_table(input_values):
-    result = []
-    for input_value in input_values:
-        this_result = {"Institution": input_value}
-        this_result.update(df.loc[input_value].round(2))
-        result.append(this_result)
-    return result
+    return list(make_row(lambda x: df.loc[x].round(2), input_values))
 
 
 @app.callback(
-    Output(component_id="percentile-table", component_property="data"),
-    Input(component_id="school-input", component_property="value"),
+    Output("percentile-table", "data"),
+    Input("school-input", "value"),
 )
 def update_percentile_table(input_values):
+    return list(
+        make_row(lambda x: ((df < df.loc[x]).mean() * 100).astype(int), input_values)
+    )
 
-    result = []
+
+def make_row(transformation, input_values):
     for input_value in input_values:
-        this_result = {"Institution": input_value}
-        percentiles = ((df < df.loc[input_value]).mean() * 100).astype(int)
-        this_result.update(percentiles)
-        result.append(this_result)
-    return result
+        yield {"Institution": input_value} | dict(transformation(input_value))
 
 
 if __name__ == "__main__":
