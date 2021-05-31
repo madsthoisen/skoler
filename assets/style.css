@@ -2,9 +2,24 @@ h4 {
     margin-top: 20px;
 }
 
-/* Dark theme for dropdown */
+/* We force quite a few of the settings below; see
+   https://community.plotly.com/t/dash-table-overrules-custom-css/29298/2 */
+.dash-header {
+  font-family: Lato, sans-serif;
+  background-color: rgb(30, 30, 30) !important;
+  padding-right: 10px !important;
+}
+
+.dash-cell {
+    font-family: Lato, sans-serif;
+    background-color: rgb(50, 50, 50) !important;
+    padding-right: 10px !important;
+}
+
+/* Dark theme for dropdown; see
+   https://community.plotly.com/t/change-textcolor-for-dropdown-menu/35230 */
 .Select-control {
-    background-color: #222 !important;  /* Override react default */
+    background-color: #222 !important;
 }
 
 .Select.is-focused > .Select-control {

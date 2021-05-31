@@ -25,16 +25,6 @@ def make_table(element_id):
         columns=[
             {"name": name, "id": name} for name in ["Institution"] + list(df.columns)
         ],
-        style_header={
-            "fontFamily": "Lato, sans-serif",
-            "backgroundColor": "rgb(30, 30, 30)",
-            "paddingRight": "10px",
-        },
-        style_cell={
-            "fontFamily": "Lato, sans-serif",
-            "backgroundColor": "rgb(50, 50, 50)",
-            "paddingRight": "10px",
-        },
     )
 
 
