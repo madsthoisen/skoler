@@ -39,15 +39,16 @@ app.layout = html.Div(
                 multi=True,
             )
         ),
-        html.H4("Trivselsindikatorer"),
+        html.H4("Trivselsindikatorer og karakterer"),
         make_table("value-table"),
         html.H4("Percentiler"),
         make_table("percentile-table"),
         dcc.Graph(id="general-graph"),
         html.H4("Om"),
         dcc.Markdown(
-            "Kilde: [Uddannelsesstatistik](https://uddannelsesstatistik.dk/Pages/Reports/1599.aspx) (2021-05-30). "
-            + "Kildekode: [GitHub](https://github.com/fuglede/skoler)"
+            "Kilde: Uddannelsesstatistik ([trivsel](https://uddannelsesstatistik.dk/Pages/Reports/1599.aspx), "
+            + "[karakterer](https://uddannelsesstatistik.dk/Pages/Reports/1802.aspx), 2021-05-30). "
+            + "Kildekode: [GitHub](https://github.com/fuglede/skoler)."
         ),
     ],
     className="container",
@@ -60,14 +61,10 @@ app.layout = html.Div(
 )
 def update_figure(input_values):
     fig = make_subplots(
-        rows=len(df.columns),
-        cols=1,
-        subplot_titles=df.columns,
-        shared_xaxes=True,
-        vertical_spacing=0.05,
+        rows=len(df.columns), cols=1, subplot_titles=df.columns, vertical_spacing=0.05,
     )
 
-    fig.update_layout(height=1500, paper_bgcolor="#222", plot_bgcolor="#222")
+    fig.update_layout(height=2100, paper_bgcolor="#222", plot_bgcolor="#222")
     # Use all but the first color for the vertical lines in the plots.
     base_color, *colors = px.colors.qualitative.Plotly
 
@@ -102,16 +99,10 @@ def update_figure(input_values):
     Output("value-table", "data"), Input("school-input", "value"),
 )
 def update_value_table(institutions):
-    return make_rows(lambda x: df.loc[x].round(2), institutions)
-
-
-@app.callback(
-    Output("percentile-table", "data"), Input("school-input", "value"),
-)
-def update_percentile_table(institutions):
-    return make_rows(
-        lambda x: ((df < df.loc[x]).mean() * 100).astype(int), institutions
-    )
+    return [
+        {"Institution": institution} | dict(df.loc[institution].round(2))
+        for institution in institutions
+    ]
 
 
 def make_rows(transformation, institutions):
@@ -119,6 +110,23 @@ def make_rows(transformation, institutions):
         {"Institution": institution} | dict(transformation(institution))
         for institution in institutions
     ]
+
+
+@app.callback(
+    Output("percentile-table", "data"), Input("school-input", "value"),
+)
+def update_percentile_table(institutions):
+    result = []
+    for institution in institutions:
+        this_result = {"Institution": institution}
+        for col in df.columns:
+            series = df[col].dropna()
+            if institution in series:
+                this_result[col] = round(
+                    (series < series.loc[institution]).mean() * 100
+                )
+        result.append(this_result)
+    return result
 
 
 if __name__ == "__main__":
