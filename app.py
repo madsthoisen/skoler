@@ -61,10 +61,14 @@ app.layout = html.Div(
 )
 def update_figure(input_values):
     fig = make_subplots(
-        rows=len(df.columns), cols=1, subplot_titles=df.columns, vertical_spacing=0.05,
+        rows=len(df.columns),
+        cols=1,
+        subplot_titles=df.columns,
+        vertical_spacing=0.05,
     )
 
     fig.update_layout(height=2100, paper_bgcolor="#222", plot_bgcolor="#222")
+
     # Use all but the first color for the vertical lines in the plots.
     base_color, *colors = px.colors.qualitative.Plotly
 
@@ -74,6 +78,9 @@ def update_figure(input_values):
             row=row,
             col=1,
         )
+        # Disable zooming and panning on the plot we're building.
+        fig["layout"][f"xaxis{row}"]["fixedrange"] = True
+        fig["layout"][f"yaxis{row}"]["fixedrange"] = True
         for i, input_value in enumerate(input_values):
             x = df.loc[input_value, column_name]
             # We could use fig.add_vline here to add the vertical lines, but that
@@ -96,7 +103,8 @@ def update_figure(input_values):
 
 
 @app.callback(
-    Output("value-table", "data"), Input("school-input", "value"),
+    Output("value-table", "data"),
+    Input("school-input", "value"),
 )
 def update_value_table(institutions):
     return [
@@ -113,7 +121,8 @@ def make_rows(transformation, institutions):
 
 
 @app.callback(
-    Output("percentile-table", "data"), Input("school-input", "value"),
+    Output("percentile-table", "data"),
+    Input("school-input", "value"),
 )
 def update_percentile_table(institutions):
     result = []
